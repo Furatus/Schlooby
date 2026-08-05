@@ -1,0 +1,6 @@
+.env
+venv/
+keys/
+*.pyc
+*.ipynb
+*.db
