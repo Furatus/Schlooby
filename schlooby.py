@@ -431,22 +431,23 @@ async def hostleep(interaction : discord.Interaction) :
     
         playeramount = len(players)
 
-        if playeramount != 0:
-            embed = discord.Embed(
-                title=f"⚠️ Attention le serveur est encore allumé et il y a encore {playeramount} joueur(s) sur le serveur",
-                description="Il faut impérativement éteindre le serveur pour mettre l'ordinateur en veille. Confirmer la mise en veille ?"
-            )
-            shutdown_view = ConfirmShutdownView()
+        if playeramount == None : playeramount = 0
 
-            await msg.edit(embed=embed, view=shutdown_view)
+        embed = discord.Embed(
+            title=f"⚠️ Attention le serveur est encore allumé et il y a encore {playeramount} joueur(s) sur le serveur",
+            description="Il faut impérativement éteindre le serveur pour mettre l'ordinateur en veille. Confirmer la mise en veille ?"
+        )
+        shutdown_view = ConfirmShutdownView()
 
-            # attendre que l'utilisateur clique (ou que ça timeout)
-            await shutdown_view.wait()
+        await msg.edit(embed=embed, view=shutdown_view)
 
-            if shutdown_view.value ==  False:
-                return
+        # attendre que l'utilisateur clique (ou que ça timeout)
+        await shutdown_view.wait()
 
-            ssh_docker.stop_container_docker()
+        if shutdown_view.value ==  False:
+            return
+
+        ssh_docker.stop_container_docker()
 
     ssh_docker.sleep_server()
 
@@ -474,51 +475,6 @@ async def hostwakeup(interaction : discord.Interaction) :
     await msg.clear_reaction("⌛")
     await msg.add_reaction("✅")
 
-@client.tree.command(name="hostshutdown")
-async def hostshutdown(interaction : discord.Interaction) :
-    """Éteint la machine, préférer la mise en veille si la fermeture est courte."""
-    await interaction.response.defer()
-
-    msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
-    await msg.add_reaction("⌛")
-
-    ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
-
-    if ping == False :
-            await msg.edit(content="Le serveur ne répond pas au ping. Impossible d'éteindre la machine, probalement déjà éteinte.")
-            await msg.clear_reaction("⌛")
-            return
-
-    server_alive = ssh_docker.health_container_docker()
-
-    if server_alive == True:
-        players = gameserver.get_players_from_game_server()['players']
-    
-        playeramount = len(players)
-
-        if playeramount != 0:
-            embed = discord.Embed(
-                title=f"⚠️ Attention le serveur est encore allumé et il y a encore {playeramount} joueur(s) sur le serveur",
-                description="Il faut impérativement éteindre le serveur pour arrêter l'ordinateur. Confirmer l'extinction ?"
-            )
-            shutdown_view = ConfirmShutdownView()
-
-            await msg.edit(embed=embed, view=shutdown_view)
-
-            # attendre que l'utilisateur clique (ou que ça timeout)
-            await shutdown_view.wait()
-
-            if shutdown_view.value ==  False:
-                return
-
-            ssh_docker.stop_container_docker()
-
-    ssh_docker.shutdown_server()
-
-    await msg.edit(content=f"La machine a été éteinte.")
-    await msg.clear_reaction("⌛")
-    await msg.add_reaction("✅")
-
 @client.tree.command(name="hostreboot")
 async def hostreboot(interaction : discord.Interaction) :
     """Redémarre la machine"""
@@ -541,22 +497,21 @@ async def hostreboot(interaction : discord.Interaction) :
     
         playeramount = len(players)
 
-        if playeramount != 0:
-            embed = discord.Embed(
-                title=f"⚠️ Attention le serveur est encore allumé et il y a encore {playeramount} joueur(s) sur le serveur",
-                description="Il faut impérativement éteindre le serveur pour arrêter l'ordinateur. Confirmer l'extinction ?"
-            )
-            shutdown_view = ConfirmShutdownView()
+        embed = discord.Embed(
+            title=f"⚠️ Attention le serveur est encore allumé et il y a encore {playeramount} joueur(s) sur le serveur",
+            description="Il faut impérativement éteindre le serveur pour arrêter l'ordinateur. Confirmer l'extinction ?"
+        )
+        shutdown_view = ConfirmShutdownView()
 
-            await msg.edit(embed=embed, view=shutdown_view)
+        await msg.edit(embed=embed, view=shutdown_view)
 
-            # attendre que l'utilisateur clique (ou que ça timeout)
-            await shutdown_view.wait()
+        # attendre que l'utilisateur clique (ou que ça timeout)
+        await shutdown_view.wait()
 
-            if shutdown_view.value ==  False:
-                return
+        if shutdown_view.value ==  False:
+            return
 
-            ssh_docker.stop_container_docker()
+        ssh_docker.stop_container_docker()
 
     ssh_docker.reboot_server()
 
