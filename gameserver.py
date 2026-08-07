@@ -10,7 +10,7 @@ async def get_players_from_game_server():
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
 
-        r = await requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers)
 
         if r.status_code == 200:
             return r.json()  # Assuming the response is in JSON format
@@ -29,7 +29,7 @@ async def save_game_server():
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
 
-        r = await requests.post(url, headers=headers)
+        r = requests.post(url, headers=headers)
 
         if r.status_code == 200:
             return True
@@ -47,7 +47,7 @@ async def info_game_server():
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
     
-        r = await requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers)
     
         if r.status_code == 200:
             return r.json()  # Assuming the response is in JSON format
@@ -66,7 +66,7 @@ async def metrics_game_server():
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
     
-        r = await requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers)
     
         if r.status_code == 200:
             return r.json()  # Assuming the response is in JSON format
@@ -89,7 +89,7 @@ async def shutdown_game_server(waittime, message):
             "message": message
         }
 
-        r = await requests.post(url, headers=headers, json=payload)
+        r = requests.post(url, headers=headers, json=payload)
 
         if r.status_code == 200:
             return True
@@ -110,7 +110,7 @@ async def announce_game_server(message):
             "message": message
         }
 
-        r = await requests.post(url, headers=headers, json=payload)
+        r = requests.post(url, headers=headers, json=payload)
 
         if r.status_code == 200:
             return True
@@ -125,7 +125,7 @@ async def health_game_server():
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}"
     
-        r = await requests.get(url)
+        r = requests.get(url)
     
         if r.status_code:
             return True

@@ -16,7 +16,7 @@ async def logs_container_docker():
 
     ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = await ssh_client.exec_command(f"docker logs {os.getenv('CONTAINER_NAME')}")
+    stdin, stdout, stderr = ssh_client.exec_command(f"docker logs {os.getenv('CONTAINER_NAME')}")
 
     output_string = stdout.read()
 
@@ -28,7 +28,7 @@ async def stop_container_docker():
 
     ssh_client = await ssh_client_init()
 
-    stdin, stdout, stderr = await ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose down")
+    stdin, stdout, stderr = ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose down")
 
     errlines = stderr.readlines()
 
@@ -43,7 +43,7 @@ async def start_container_docker():
 
     ssh_client = await ssh_client_init()
 
-    stdin, stdout, stderr = await ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose up -d")
+    stdin, stdout, stderr = ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose up -d")
 
     errlines = stderr.readlines()
 
@@ -58,7 +58,7 @@ async def restart_container_docker():
 
     ssh_client = await ssh_client_init()
 
-    stdin, stdout, stderr = await ssh_client.exec_command(f"docker restart {os.getenv('CONTAINER_NAME')}")
+    stdin, stdout, stderr = ssh_client.exec_command(f"docker restart {os.getenv('CONTAINER_NAME')}")
 
     errlines = stderr.readlines()
 
@@ -73,7 +73,7 @@ async def health_container_docker():
 
     ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = await ssh_client.exec_command(f"docker stats --no-stream")
+    stdin, stdout, stderr = ssh_client.exec_command(f"docker stats --no-stream")
 
     output_string = stdout.read().decode('unicode-escape')
 
@@ -88,7 +88,7 @@ async def sleep_server():
 
     ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = await ssh_client.exec_command("sudo /usr/bin/systemctl suspend")
+    stdin, stdout, stderr = ssh_client.exec_command("sudo /usr/bin/systemctl suspend")
 
     print(stderr.readlines())
 
@@ -103,7 +103,7 @@ async def shutdown_server():
 
     ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = await ssh_client.exec_command("sudo /usr/sbin/shutdown now")
+    stdin, stdout, stderr = ssh_client.exec_command("sudo /usr/sbin/shutdown now")
 
     print(stderr.readlines())
 
@@ -117,7 +117,7 @@ async def shutdown_server():
 async def reboot_server():
     ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = await ssh_client.exec_command("sudo /usr/sbin/reboot")
+    stdin, stdout, stderr = ssh_client.exec_command("sudo /usr/sbin/reboot")
 
     print(stderr.readlines())
 
