@@ -12,7 +12,6 @@ from ConfirmShutdownView import ConfirmShutdownView
 from IgnoreHealthView import IgnoreHealthView
 import ssh_docker
 import wakeonlan_server
-from time import sleep
 
 load_env()
 guild_id = int(os.getenv('GUILD_ID'))
@@ -249,7 +248,7 @@ async def delayedstop(interaction : discord.Interaction, delai: app_commands.Ran
             return
         
 
-    gameserver.shutdown_game_server(delai, f"Attention, fermeture du serveur dans : {str(datetime.timedelta(seconds=int(server_info['uptime'])))}, message : {message}")
+    gameserver.shutdown_game_server(delai, f"Attention, fermeture du serveur dans : {str(datetime.timedelta(seconds=int(delai)))}, message : {message}")
 
     await msg.edit(content=f"Fermeture envoyée au serveur. Le serveur fermera dans {delai} secondes")
     await msg.clear_reaction("⌛")
@@ -569,12 +568,12 @@ async def start(interaction : discord.Interaction) :
                 await msg.edit(content="Réponse reçue du serveur, la séquence va continuer.")
                 break
 
-            sleep(10)
+            await asyncio.sleep(10)
             await wakeonlan_server.wake_server()
             await msg.edit(content=f"Ping : Tentative n°{i}/60, 10s attente (maximum 10 minutes, on considère que l'ordinateur n'a pas démarré au delà)...")
 
         await msg.edit(content="Attente de 30 secondes, le temps que le serveur s'initialise correctement...")
-        sleep(30)
+        await asyncio.sleep(30)
     
     alive = ssh_docker.health_container_docker()
 
@@ -582,7 +581,7 @@ async def start(interaction : discord.Interaction) :
         await msg.edit(content="Le conteneur docker n'est pas initialisé. Fermeture par mesure de sûreté, si le compose a mal été fermé...")
         ssh_docker.stop_container_docker()
 
-        await msg.edit(content="Lancement du conteneur...")
+        await msg.edit(content="Lancement du conteneur... En cas de mise à jour du serveur, cette étape peut durer jusqu'à ~5 minutes...")
         ssh_docker.start_container_docker()
 
     if alive == True :
@@ -591,7 +590,7 @@ async def start(interaction : discord.Interaction) :
     
     await msg.edit(content="Serveur démarré. Il devrait être accessible sous peu. Vérification de l'état/santé du serveur post démarrage dans 1 minute. (Vous pouvez ignorer)")
 
-    sleep(60)
+    await asyncio.sleep(60)
     gameserver_alive = gameserver.health_game_server()
 
     if gameserver_alive == True :
