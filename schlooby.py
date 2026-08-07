@@ -45,7 +45,7 @@ async def announce(interaction: discord.Interaction, message: str = ""):
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    alive = gameserver.health_game_server()
+    alive = await gameserver.health_game_server()
     
     if alive == False :
         await msg.edit(content="Le serveur ne répond pas ou est fermé. considérez la commande `/start` ou `/restart` pour résoudre le problème ?")
@@ -53,7 +53,7 @@ async def announce(interaction: discord.Interaction, message: str = ""):
         await msg.add_reaction("⚠️")
         return
 
-    gameserver.announce_game_server(message)
+    await gameserver.announce_game_server(message)
 
     await msg.edit(content=f"Message envoyé : {message}")
     await msg.clear_reaction("⌛")
@@ -67,7 +67,7 @@ async def list_players(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    alive = gameserver.health_game_server()
+    alive = await gameserver.health_game_server()
     
     if alive == False :
         await msg.edit(content="Le serveur ne répond pas ou est fermé. considérez la commande `/start` ou `/restart` pour résoudre le problème ?")
@@ -75,7 +75,7 @@ async def list_players(interaction : discord.Interaction) :
         await msg.add_reaction("⚠️")
         return
 
-    players = gameserver.get_players_from_game_server()['players']
+    players = await gameserver.get_players_from_game_server()['players']
 
     playeramount = len(players)
 
@@ -104,7 +104,7 @@ async def save(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    alive = gameserver.health_game_server()
+    alive = await gameserver.health_game_server()
     
     if alive == False :
         await msg.edit(content="Le serveur ne répond pas ou est fermé. considérez la commande `/start` ou `/restart` pour résoudre le problème ?")
@@ -112,7 +112,7 @@ async def save(interaction : discord.Interaction) :
         await msg.add_reaction("⚠️")
         return
 
-    gameserver.save_game_server()
+    await gameserver.save_game_server()
 
     await msg.edit(content="Partie sauvegardée !")
     await msg.clear_reaction("⌛")
@@ -126,7 +126,7 @@ async def server_info(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    alive = gameserver.health_game_server()
+    alive = await gameserver.health_game_server()
 
     if alive == False :
         await msg.edit(content="Le serveur ne répond pas ou est fermé. considérez la commande `/start` ou `/restart` pour résoudre le problème ?")
@@ -134,7 +134,7 @@ async def server_info(interaction : discord.Interaction) :
         await msg.add_reaction("⚠️")
         return
 
-    server_info = gameserver.info_game_server()
+    server_info = await gameserver.info_game_server()
 
     embed = discord.Embed(title="Informations du serveur")
 
@@ -165,7 +165,7 @@ async def status(interaction : discord.Interaction, type : statustype) :
 
     match type.value:
         case 0:
-            alive = gameserver.health_game_server()
+            alive = await gameserver.health_game_server()
 
             if alive == False :
                 await msg.edit(content="Le serveur ne répond pas ou est fermé. considérez la commande `/start` ou `/restart` pour résoudre le problème ?")
@@ -173,7 +173,7 @@ async def status(interaction : discord.Interaction, type : statustype) :
                 await msg.add_reaction("⚠️")
                 return
 
-            server_info = gameserver.metrics_game_server()
+            server_info = await gameserver.metrics_game_server()
 
             embed = discord.Embed(title="État du serveur")
 
@@ -220,7 +220,7 @@ async def delayedstop(interaction : discord.Interaction, delai: app_commands.Ran
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    alive = gameserver.health_game_server()
+    alive = await gameserver.health_game_server()
 
     if alive == False :
         await msg.edit(content="Le serveur ne répond pas ou est fermé.")
@@ -228,7 +228,7 @@ async def delayedstop(interaction : discord.Interaction, delai: app_commands.Ran
         await msg.add_reaction("⚠️")
         return
 
-    players = gameserver.get_players_from_game_server()['players']
+    players = await gameserver.get_players_from_game_server()['players']
     
     playeramount = len(players)
 
@@ -248,7 +248,7 @@ async def delayedstop(interaction : discord.Interaction, delai: app_commands.Ran
             return
         
 
-    gameserver.shutdown_game_server(delai, f"Attention, fermeture du serveur dans : {str(datetime.timedelta(seconds=int(delai)))}, message : {message}")
+    await gameserver.shutdown_game_server(delai, f"Attention, fermeture du serveur dans : {str(datetime.timedelta(seconds=int(delai)))}, message : {message}")
 
     await msg.edit(content=f"Fermeture envoyée au serveur. Le serveur fermera dans {delai} secondes")
     await msg.clear_reaction("⌛")
@@ -262,13 +262,13 @@ async def stop(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+    ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
 
     if ping == False :
             await msg.edit(content="Le serveur ne répond pas au ping. Impossible d'arrêter le conteneur. Considérez la commande `/start` ou `/hostwakeup` pour démarrer le serveur ou la machine.")
             return
 
-    alive = ssh_docker.health_container_docker()
+    alive = await ssh_docker.health_container_docker()
 
     if alive == False :
         ignore_view = IgnoreHealthView()
@@ -278,7 +278,7 @@ async def stop(interaction : discord.Interaction) :
 
         await ignore_view.wait()
 
-        ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+        ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
 
         if ping == False :
             msg.edit(content="Le serveur ne répond pas au ping. Impossible d'arrêter.")
@@ -288,7 +288,7 @@ async def stop(interaction : discord.Interaction) :
             return
 
     if alive == True:
-        players = gameserver.get_players_from_game_server()['players']
+        players = await gameserver.get_players_from_game_server()['players']
     
         playeramount = len(players)
 
@@ -308,7 +308,7 @@ async def stop(interaction : discord.Interaction) :
                 return
         
 
-    ssh_docker.stop_container_docker()
+    await ssh_docker.stop_container_docker()
 
     await msg.edit(content=f"Le serveur a été éteint.")
     await msg.clear_reaction("⌛")
@@ -329,13 +329,13 @@ async def logs(interaction : discord.Interaction, type : logstype) :
 
     match type.value:
         case 0:
-            ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+            ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
 
             if ping == False :
                 await msg.edit(content="Le serveur ne répond pas au ping. Considérez la commande `/start` pour démarrer le serveur")
                 return
         
-            alive = ssh_docker.health_container_docker()
+            alive = await ssh_docker.health_container_docker()
 
             if alive == False :
                 await msg.edit(content="Le conteneur ne répond pas ou est fermé. considérez la commande `/start`")
@@ -343,7 +343,7 @@ async def logs(interaction : discord.Interaction, type : logstype) :
                 await msg.add_reaction("⚠️")
                 return
 
-            logs = ssh_docker.logs_container_docker().decode('unicode-escape')
+            logs = await ssh_docker.logs_container_docker().decode('unicode-escape')
             lastest_logs = logs[-1800:] if len(logs) > 1800 else logs
 
             await msg.edit(content=f"### Logs brutes du serveur \n``` {lastest_logs} ```")
@@ -367,14 +367,14 @@ async def restart(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+    ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
 
     if ping == False :
             await msg.edit(content="Le serveur ne répond pas au ping. Impossible de redémarrer le conteneur. Considérez la commande `/start` pour démarrer le serveur")
             await msg.clear_reaction("⌛")
             return
 
-    alive = ssh_docker.health_container_docker()
+    alive = await ssh_docker.health_container_docker()
 
     if alive == False :
         await msg.edit(content="Le conteneur ne répond pas ou est fermé. \n Impossible de redémarrer. Essayez la commande /stop puis /start")
@@ -382,7 +382,7 @@ async def restart(interaction : discord.Interaction) :
         return
 
     if alive == True:
-        players = gameserver.get_players_from_game_server()['players']
+        players = await gameserver.get_players_from_game_server()['players']
     
         playeramount = len(players)
 
@@ -402,7 +402,7 @@ async def restart(interaction : discord.Interaction) :
                 return
         
 
-    ssh_docker.restart_container_docker()
+    await ssh_docker.restart_container_docker()
 
     await msg.edit(content=f"Le serveur a été redémarré.")
     await msg.clear_reaction("⌛")
@@ -416,17 +416,17 @@ async def hostleep(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+    ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
 
     if ping == False :
             await msg.edit(content="Le serveur ne répond pas au ping. Impossible de mettre en veille, probalement déjà éteinte.")
             await msg.clear_reaction("⌛")
             return
 
-    server_alive = ssh_docker.health_container_docker()
+    server_alive = await ssh_docker.health_container_docker()
 
     if server_alive == True:
-        players = gameserver.get_players_from_game_server()['players']
+        players = await gameserver.get_players_from_game_server()['players']
     
         playeramount = len(players)
 
@@ -446,9 +446,9 @@ async def hostleep(interaction : discord.Interaction) :
         if shutdown_view.value ==  False:
             return
 
-        ssh_docker.stop_container_docker()
+        await ssh_docker.stop_container_docker()
 
-    ssh_docker.sleep_server()
+    await ssh_docker.sleep_server()
 
     await msg.edit(content=f"La machine a été mise en veille.")
     await msg.clear_reaction("⌛")
@@ -462,7 +462,7 @@ async def hostwakeup(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+    ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
         
     if ping == True :
         await msg.edit(content="Le serveur est déjà allumé. il n'est pas nécessaire d'envoyer un paquet.")
@@ -482,17 +482,17 @@ async def hostreboot(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+    ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
 
     if ping == False :
             await msg.edit(content="Le serveur ne répond pas au ping. Impossible de redémarrer la machine, probalement éteinte.")
             await msg.clear_reaction("⌛")
             return
 
-    server_alive = ssh_docker.health_container_docker()
+    server_alive = await ssh_docker.health_container_docker()
 
     if server_alive == True:
-        players = gameserver.get_players_from_game_server()['players']
+        players = await gameserver.get_players_from_game_server()['players']
     
         playeramount = len(players)
 
@@ -510,9 +510,9 @@ async def hostreboot(interaction : discord.Interaction) :
         if shutdown_view.value ==  False:
             return
 
-        ssh_docker.stop_container_docker()
+        await ssh_docker.stop_container_docker()
 
-    ssh_docker.reboot_server()
+    await ssh_docker.reboot_server()
 
     await msg.edit(content=f"La machine a été redémarrée.")
     await msg.clear_reaction("⌛")
@@ -527,7 +527,7 @@ async def connect_info(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
 
-    alive = gameserver.health_game_server()
+    alive = await gameserver.health_game_server()
     embed = discord.Embed(title="Informations de connexion",description=f"Jeu : {os.getenv('CONNECT_GAME')}")
 
     embed.add_field(name="Adresse du serveur", value=f"{os.getenv('CONNECT_DNS')}")
@@ -551,14 +551,14 @@ async def start(interaction : discord.Interaction) :
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
     
-    ping = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+    ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
     
     if ping == False :
         await msg.edit(content="L'ordinateur est éteint, Tentative d'allumage")
         await wakeonlan_server.wake_server()
         await msg.edit(content="Signal envoyé, patientez ~3 min pour le démarrage (cela peut demander plus, ou moins de temps)")
         for i in range(0,60,1) :
-            alive = wakeonlan_server.ping(os.getenv('SERVER_IP'))
+            alive = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
             if alive == False and i == 60 :
                 await msg.edit("Le serveur ne répond pas, ou n'a pas l'air d'avoir démarré. Impossible de démarrer le conteneur ou le serveur de jeu.")
                 await msg.clear_reaction("⌛")
@@ -575,14 +575,14 @@ async def start(interaction : discord.Interaction) :
         await msg.edit(content="Attente de 30 secondes, le temps que le serveur s'initialise correctement...")
         await asyncio.sleep(30)
     
-    alive = ssh_docker.health_container_docker()
+    alive = await ssh_docker.health_container_docker()
 
     if alive == False :
         await msg.edit(content="Le conteneur docker n'est pas initialisé. Fermeture par mesure de sûreté, si le compose a mal été fermé...")
-        ssh_docker.stop_container_docker()
+        await ssh_docker.stop_container_docker()
 
         await msg.edit(content="Lancement du conteneur... En cas de mise à jour du serveur, cette étape peut durer jusqu'à ~5 minutes...")
-        ssh_docker.start_container_docker()
+        await ssh_docker.start_container_docker()
 
     if alive == True :
             await msg.edit(content="Le conteneur est déjà en marche. Si le serveur ne fonctionne plus, ou n'est plus accessible, utiliser la commande `/restart` OU `/stop` puis `/start` à nouveau")
@@ -591,7 +591,7 @@ async def start(interaction : discord.Interaction) :
     await msg.edit(content="Serveur démarré. Il devrait être accessible sous peu. Vérification de l'état/santé du serveur post démarrage dans 1 minute. (Vous pouvez ignorer)")
 
     await asyncio.sleep(60)
-    gameserver_alive = gameserver.health_game_server()
+    gameserver_alive = await gameserver.health_game_server()
 
     if gameserver_alive == True :
         await msg.edit(content="Serveur démarré, vérification réussie !")

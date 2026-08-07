@@ -15,7 +15,7 @@ async def wake_server():
         print(f"Error sending Wake-on-LAN packet: {e}")
         return False
 
-def ping(host): # Found on StackOverflow from ePi272314 and Benjamin L.
+async def ping(host): # Found on StackOverflow from ePi272314 and Benjamin L.
     """
     Returns True if host (str) responds to a ping request.
     Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.

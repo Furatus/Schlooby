@@ -5,18 +5,18 @@ from paramiko import SSHClient, MissingHostKeyPolicy, WarningPolicy
 import paramiko
 
 
-def ssh_client_init():
+async def ssh_client_init():
     ssh_client = SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy())
     ssh_client.connect(os.getenv('SERVER_IP'),22,os.getenv('SSH_USERNAME'),os.getenv('SSH_PASSWORD'))
 
     return ssh_client
 
-def logs_container_docker():
+async def logs_container_docker():
 
-    ssh_client = ssh_client_init()
+    ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = ssh_client.exec_command(f"docker logs {os.getenv('CONTAINER_NAME')}")
+    stdin, stdout, stderr = await ssh_client.exec_command(f"docker logs {os.getenv('CONTAINER_NAME')}")
 
     output_string = stdout.read()
 
@@ -24,26 +24,11 @@ def logs_container_docker():
 
     return output_string
 
-def stop_container_docker():
+async def stop_container_docker():
 
-    ssh_client = ssh_client_init()
+    ssh_client = await ssh_client_init()
 
-    stdin, stdout, stderr = ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose down")
-
-    errlines = stderr.readlines()
-
-    ssh_client.close()
-
-    if len(errlines) == 0 :
-        return True
-    else :
-        return False
-
-def start_container_docker():
-
-    ssh_client = ssh_client_init()
-
-    stdin, stdout, stderr = ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose up -d")
+    stdin, stdout, stderr = await ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose down")
 
     errlines = stderr.readlines()
 
@@ -54,11 +39,11 @@ def start_container_docker():
     else :
         return False
 
-def restart_container_docker():
+async def start_container_docker():
 
-    ssh_client = ssh_client_init()
+    ssh_client = await ssh_client_init()
 
-    stdin, stdout, stderr = ssh_client.exec_command(f"docker restart {os.getenv('CONTAINER_NAME')}")
+    stdin, stdout, stderr = await ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose up -d")
 
     errlines = stderr.readlines()
 
@@ -69,11 +54,26 @@ def restart_container_docker():
     else :
         return False
 
-def health_container_docker():
+async def restart_container_docker():
 
-    ssh_client = ssh_client_init()
+    ssh_client = await ssh_client_init()
+
+    stdin, stdout, stderr = await ssh_client.exec_command(f"docker restart {os.getenv('CONTAINER_NAME')}")
+
+    errlines = stderr.readlines()
+
+    ssh_client.close()
+
+    if len(errlines) == 0 :
+        return True
+    else :
+        return False
+
+async def health_container_docker():
+
+    ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = ssh_client.exec_command(f"docker stats --no-stream")
+    stdin, stdout, stderr = await ssh_client.exec_command(f"docker stats --no-stream")
 
     output_string = stdout.read().decode('unicode-escape')
 
@@ -84,11 +84,11 @@ def health_container_docker():
     else :
         return False
 
-def sleep_server():
+async def sleep_server():
 
-    ssh_client = ssh_client_init()
+    ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = ssh_client.exec_command("sudo /usr/bin/systemctl suspend")
+    stdin, stdout, stderr = await ssh_client.exec_command("sudo /usr/bin/systemctl suspend")
 
     print(stderr.readlines())
 
@@ -99,11 +99,11 @@ def sleep_server():
     else :
         return False
 
-def shutdown_server():
+async def shutdown_server():
 
-    ssh_client = ssh_client_init()
+    ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = ssh_client.exec_command("sudo /usr/sbin/shutdown now")
+    stdin, stdout, stderr = await ssh_client.exec_command("sudo /usr/sbin/shutdown now")
 
     print(stderr.readlines())
 
@@ -114,10 +114,10 @@ def shutdown_server():
     else :
         return False
 
-def reboot_server():
-    ssh_client = ssh_client_init()
+async def reboot_server():
+    ssh_client = await ssh_client_init()
     
-    stdin, stdout, stderr = ssh_client.exec_command("sudo /usr/sbin/reboot")
+    stdin, stdout, stderr = await ssh_client.exec_command("sudo /usr/sbin/reboot")
 
     print(stderr.readlines())
 

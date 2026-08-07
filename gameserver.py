@@ -3,14 +3,14 @@ import sys
 import asyncio
 import os
 
-def get_players_from_game_server():
+async def get_players_from_game_server():
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}/players"
         headers = {
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
 
-        r = requests.get(url, headers=headers)
+        r = await requests.get(url, headers=headers)
 
         if r.status_code == 200:
             return r.json()  # Assuming the response is in JSON format
@@ -22,14 +22,14 @@ def get_players_from_game_server():
         print(f"Error occurred while fetching players: {e}")
         return None
 
-def save_game_server():
+async def save_game_server():
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}/save"
         headers = {
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
 
-        r = requests.post(url, headers=headers)
+        r = await requests.post(url, headers=headers)
 
         if r.status_code == 200:
             return True
@@ -40,14 +40,14 @@ def save_game_server():
         print(f"Error occurred while saving: {e}")
         return False
 
-def info_game_server():
+async def info_game_server():
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}/info"
         headers = {
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
     
-        r = requests.get(url, headers=headers)
+        r = await requests.get(url, headers=headers)
     
         if r.status_code == 200:
             return r.json()  # Assuming the response is in JSON format
@@ -59,14 +59,14 @@ def info_game_server():
         print(f"Error occurred while saving: {e}")
         return False
 
-def metrics_game_server():
+async def metrics_game_server():
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}/metrics"
         headers = {
             "Authorization": os.getenv('GAMESERVER_API_BASIC_AUTH')
         }
     
-        r = requests.get(url, headers=headers)
+        r = await requests.get(url, headers=headers)
     
         if r.status_code == 200:
             return r.json()  # Assuming the response is in JSON format
@@ -78,7 +78,7 @@ def metrics_game_server():
         print(f"Error occurred while saving: {e}")
         return False
 
-def shutdown_game_server(waittime, message):
+async def shutdown_game_server(waittime, message):
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}/shutdown"
         headers = {
@@ -89,7 +89,7 @@ def shutdown_game_server(waittime, message):
             "message": message
         }
 
-        r = requests.post(url, headers=headers, json=payload)
+        r = await requests.post(url, headers=headers, json=payload)
 
         if r.status_code == 200:
             return True
@@ -100,7 +100,7 @@ def shutdown_game_server(waittime, message):
         print(f"Error occurred while saving: {e}")
         return False
 
-def announce_game_server(message):
+async def announce_game_server(message):
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}/announce"
         headers = {
@@ -110,7 +110,7 @@ def announce_game_server(message):
             "message": message
         }
 
-        r = requests.post(url, headers=headers, json=payload)
+        r = await requests.post(url, headers=headers, json=payload)
 
         if r.status_code == 200:
             return True
@@ -121,11 +121,11 @@ def announce_game_server(message):
         print(f"Error occurred while saving: {e}")
         return False
 
-def health_game_server():
+async def health_game_server():
     try:
         url = f"{os.getenv('GAMESERVER_API_URL')}"
     
-        r = requests.get(url)
+        r = await requests.get(url)
     
         if r.status_code:
             return True
