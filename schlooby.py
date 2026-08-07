@@ -75,7 +75,8 @@ async def list_players(interaction : discord.Interaction) :
         await msg.add_reaction("⚠️")
         return
 
-    players = await gameserver.get_players_from_game_server()['players']
+    players = await gameserver.get_players_from_game_server()
+    players = players['players']
 
     playeramount = len(players)
 
@@ -228,7 +229,8 @@ async def delayedstop(interaction : discord.Interaction, delai: app_commands.Ran
         await msg.add_reaction("⚠️")
         return
 
-    players = await gameserver.get_players_from_game_server()['players']
+    players = await gameserver.get_players_from_game_server()
+    players = players['players']
     
     playeramount = len(players)
 
@@ -288,7 +290,9 @@ async def stop(interaction : discord.Interaction) :
             return
 
     if alive == True:
-        players = await gameserver.get_players_from_game_server()['players']
+
+        players = await gameserver.get_players_from_game_server()
+        players = players['players']
     
         playeramount = len(players)
 
@@ -382,7 +386,9 @@ async def restart(interaction : discord.Interaction) :
         return
 
     if alive == True:
-        players = await gameserver.get_players_from_game_server()['players']
+
+        players = await gameserver.get_players_from_game_server()
+        players = players['players']
     
         playeramount = len(players)
 
@@ -426,7 +432,9 @@ async def hostleep(interaction : discord.Interaction) :
     server_alive = await ssh_docker.health_container_docker()
 
     if server_alive == True:
-        players = await gameserver.get_players_from_game_server()['players']
+        
+        players = await gameserver.get_players_from_game_server()
+        players = players['players']
     
         playeramount = len(players)
 
@@ -492,7 +500,9 @@ async def hostreboot(interaction : discord.Interaction) :
     server_alive = await ssh_docker.health_container_docker()
 
     if server_alive == True:
-        players = await gameserver.get_players_from_game_server()['players']
+
+        players = await gameserver.get_players_from_game_server()
+        players = players['players']
     
         playeramount = len(players)
 
