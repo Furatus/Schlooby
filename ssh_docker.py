@@ -127,3 +127,18 @@ async def reboot_server():
         return True
     else :
         return False
+
+async def pull_container_docker():
+
+    ssh_client = await ssh_client_init()
+    
+    stdin, stdout, stderr = ssh_client.exec_command(f"cd {os.getenv('COMPOSE_FOLDER')} && docker compose pull")
+    
+    errlines = stderr.readlines()
+    
+    ssh_client.close()
+    
+    if len(errlines) == 0 :
+        return True
+    else :
+        return False

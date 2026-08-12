@@ -432,7 +432,7 @@ async def hostleep(interaction : discord.Interaction) :
     server_alive = await ssh_docker.health_container_docker()
 
     if server_alive == True:
-        
+
         players = await gameserver.get_players_from_game_server()
         players = players['players']
     
@@ -591,7 +591,10 @@ async def start(interaction : discord.Interaction) :
         await msg.edit(content="Le conteneur docker n'est pas initialisé. Fermeture par mesure de sûreté, si le compose a mal été fermé...")
         await ssh_docker.stop_container_docker()
 
-        await msg.edit(content="Lancement du conteneur... En cas de mise à jour du serveur, cette étape peut durer jusqu'à ~5 minutes...")
+        await msg.edit(content="Vérification de la version du conteneur et mise à jour si nécessaire, En cas de mise à jour du serveur, cette étape peut durer jusqu'à ~5 minutes...")
+        await ssh_docker.pull_container_docker()
+
+        await msg.edit(content="Lancement du conteneur...")
         await ssh_docker.start_container_docker()
 
     if alive == True :
@@ -611,5 +614,7 @@ async def start(interaction : discord.Interaction) :
 
     await msg.clear_reaction("⌛")    
     await msg.add_reaction("✅")
+
+
 
 client.run(os.getenv('DISCORD_BOT_TOKEN'))
