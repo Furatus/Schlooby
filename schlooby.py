@@ -353,8 +353,9 @@ async def logs(interaction : discord.Interaction, type : logstype) :
                 await msg.add_reaction("⚠️")
                 return
 
-            logs = await ssh_docker.logs_container_docker().decode('unicode-escape')
-            lastest_logs = logs[-1800:] if len(logs) > 1800 else logs
+            logs = await ssh_docker.logs_container_docker()
+            decoded_logs = logs.decode('unicode-escape')
+            lastest_logs = decoded_logs[-1800:] if len(decoded_logs) > 1800 else decoded_logs
 
             await msg.edit(content=f"### Logs brutes du serveur \n``` {lastest_logs} ```")
             await msg.clear_reaction("⌛")
@@ -652,39 +653,39 @@ async def check_empty_process() :
     
     channel = client.get_channel(channel_id)
     ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
-
-    keepalive_amount = sqlite.get_current_keepalive_count()
-
-    if keepalive_amount > 0 :
-        first_empty_time = await sqlite.check_first_empty_time()
-        first_down_time = await sqlite.check_first_down_time()
-        message_id = await sqlite.get_message_id()
-
-
-        if first_empty_time != None or first_down_time != None:
-            await sqlite.clear_times()
-        
-        if message_id != None:
-            message = discord.PartialMessage(channel=channel_id, id=message_id)
-                                
-            embed = discord.Embed(title="Fermeture automatique annulée", description=f"Un keepalive a été créé pour garder le serveur ouvert.")
-            await message.edit(embed=embed)
-
-            await sqlite.insert_message_id(None)
-
         
     if ping == False :
         print("Loop: Serveur déjà éteint")
         return
     else :
         server_alive = await ssh_docker.health_container_docker()
-
-            
+   
         if server_alive == True:
 
             gameserver_alive = await gameserver.health_game_server()
 
             if gameserver_alive == True :
+
+                keepalive_amount = sqlite.get_current_keepalive_count()
+
+                if keepalive_amount > 0 :
+                        first_empty_time = await sqlite.check_first_empty_time()
+                        first_down_time = await sqlite.check_first_down_time()
+                        message_id = await sqlite.get_message_id()
+                
+                
+                        if first_empty_time != None or first_down_time != None:
+                            await sqlite.clear_times()
+                        
+                        if message_id != None:
+                            message = discord.PartialMessage(channel=channel_id, id=message_id)
+                                                
+                            embed = discord.Embed(title="Fermeture automatique annulée", description=f"Un keepalive a été créé pour garder le serveur ouvert.")
+                            await message.edit(embed=embed)
+                
+                            await sqlite.insert_message_id(None)
+                
+                        return
 
                 players = await gameserver.get_players_from_game_server()
                 players = players['players']
@@ -759,6 +760,8 @@ async def check_empty_process() :
                     embed = discord.Embed(title="Le serveur a été mis en veille.", description="Pour relancer le serveur, lancer la commande `/start`")
 
                     await message.edit(content="", embed=embed)
+
+                    await sqlite.insert_message_id(None)
             
             
             else:
