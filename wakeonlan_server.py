@@ -27,4 +27,4 @@ async def ping(host): # Found on StackOverflow from ePi272314 and Benjamin L.
     # Building the command. Ex: "ping -c 1 google.com"
     command = ['fping', param, '1', '-t', '300', host]
 
-    return subprocess.call(command) == 0
+    return subprocess.call(command, stdout=open(os.devnull, 'wb'), stderr=open(os.devnull, 'wb')) == 0

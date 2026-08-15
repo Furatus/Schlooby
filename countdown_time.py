@@ -10,10 +10,10 @@ def get_remaining_time(starttime : int, type : str):
     match type:
 
         case "stop":
-            countdown_duration = os.getenv('STOP_TIME') * 60
+            countdown_duration = int(os.getenv('STOP_TIME')) * 60
 
         case "sleep":
-            countdown_duration = os.getenv('SLEEP_TIME') * 60
+            countdown_duration = int(os.getenv('SLEEP_TIME')) * 60
 
         case _:
             countdown_duration = 1800

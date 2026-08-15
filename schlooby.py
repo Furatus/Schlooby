@@ -17,6 +17,7 @@ import sqlite
 import countdown_time
 import calendar
 import time
+import traceback
 
 load_env()
 guild_id = int(os.getenv('GUILD_ID'))
@@ -235,6 +236,9 @@ async def delayedstop(interaction : discord.Interaction, delai: app_commands.Ran
         await msg.add_reaction("⚠️")
         return
 
+    current_timestamp = calendar.timegm(time.gmtime())
+    await sqlite.insert_keepalive(userid= "1",starttime=current_timestamp, endtime=current_timestamp + delai)
+
     players = await gameserver.get_players_from_game_server()
     players = players['players']
     
@@ -275,6 +279,9 @@ async def stop(interaction : discord.Interaction) :
     if ping == False :
             await msg.edit(content="Le serveur ne répond pas au ping. Impossible d'arrêter le conteneur. Considérez la commande `/start` ou `/hostwakeup` pour démarrer le serveur ou la machine.")
             return
+
+    current_timestamp = calendar.timegm(time.gmtime())
+    await sqlite.insert_keepalive(userid= "1",starttime=current_timestamp, endtime=current_timestamp + 30)
 
     alive = await ssh_docker.health_container_docker()
 
@@ -384,6 +391,9 @@ async def restart(interaction : discord.Interaction) :
             await msg.edit(content="Le serveur ne répond pas au ping. Impossible de redémarrer le conteneur. Considérez la commande `/start` pour démarrer le serveur")
             await msg.clear_reaction("⌛")
             return
+
+    current_timestamp = calendar.timegm(time.gmtime())
+    await sqlite.insert_keepalive(userid= "1",starttime=current_timestamp, endtime=current_timestamp + 60)
 
     alive = await ssh_docker.health_container_docker()
 
@@ -508,6 +518,9 @@ async def hostreboot(interaction : discord.Interaction) :
 
     if server_alive == True:
 
+        current_timestamp = calendar.timegm(time.gmtime())
+        await sqlite.insert_keepalive(userid= "1",starttime=current_timestamp, endtime=current_timestamp + 600)
+
         players = await gameserver.get_players_from_game_server()
         players = players['players']
     
@@ -567,6 +580,11 @@ async def start(interaction : discord.Interaction) :
 
     msg = await interaction.followup.send("Traitement en cours, toutes les autres commandes seront IGNORÉES jusqu'à la résolution de celle-ci...", wait=True)
     await msg.add_reaction("⌛")
+
+    current_timestamp = calendar.timegm(time.gmtime())
+    await sqlite.insert_keepalive(userid= "1",starttime=current_timestamp, endtime=current_timestamp + 600)
+
+    await sqlite.clear_times()
     
     ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
     
@@ -635,9 +653,9 @@ async def broadcasthere(interaction : discord.Interaction) :
         await msg.clear_reaction("⌛")
         return
 
-    set_key('.env','BROADCAST_CHANNEL_ID', interaction.channel_id)
+    set_key('.env','BROADCAST_CHANNEL_ID', f"{interaction.channel_id}")
 
-    await msg.edit('OK, à partir de maintenant, les messages seront envoyés ici.')
+    await msg.edit(content='OK, à partir de maintenant, les messages seront envoyés ici.')
 
     await msg.clear_reaction("⌛")    
     await msg.add_reaction("✅")
@@ -645,133 +663,167 @@ async def broadcasthere(interaction : discord.Interaction) :
 @tasks.loop(seconds=60,name="checkempty")
 async def check_empty_process() :
 
-    channel_id = int(os.getenv('BROADCAST_CHANNEL_ID'))
+    try:
 
-    if(channel_id == None or channel_id == "") :
-        print('Pas de clé channel id dans le fichier .env, sortie de la boucle')
-        return
-    
-    channel = client.get_channel(channel_id)
-    ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
-        
-    if ping == False :
-        print("Loop: Serveur déjà éteint")
-        return
-    else :
-        server_alive = await ssh_docker.health_container_docker()
-   
-        if server_alive == True:
+        channel_id_str = os.getenv('BROADCAST_CHANNEL_ID')
 
-            gameserver_alive = await gameserver.health_game_server()
+        if(channel_id_str == None or channel_id_str == "") :
+            print('Pas de clé channel id dans le fichier .env, sortie de la boucle')
+            return
 
-            if gameserver_alive == True :
+        channel_id = int(os.getenv('BROADCAST_CHANNEL_ID'))
 
-                keepalive_amount = sqlite.get_current_keepalive_count()
+        channel = client.get_channel(channel_id)
+        ping = await wakeonlan_server.ping(os.getenv('SERVER_IP'))
 
-                if keepalive_amount > 0 :
-                        first_empty_time = await sqlite.check_first_empty_time()
-                        first_down_time = await sqlite.check_first_down_time()
-                        message_id = await sqlite.get_message_id()
-                
-                
-                        if first_empty_time != None or first_down_time != None:
-                            await sqlite.clear_times()
-                        
-                        if message_id != None:
-                            message = discord.PartialMessage(channel=channel_id, id=message_id)
-                                                
-                            embed = discord.Embed(title="Fermeture automatique annulée", description=f"Un keepalive a été créé pour garder le serveur ouvert.")
-                            await message.edit(embed=embed)
-                
-                            await sqlite.insert_message_id(None)
-                
-                        return
+        if ping == False :
+            print("Loop: Serveur déjà éteint")
 
-                players = await gameserver.get_players_from_game_server()
-                players = players['players']
-                                
-                playeramount = len(players)
-
-                if playeramount == 0 :
-                    first_empty_time = await sqlite.check_first_empty_time()
-
-                    if first_empty_time != None :
-                        message_id = await sqlite.get_message_id()
-                        message = discord.PartialMessage(channel=channel_id, id=message_id)
-                        remaining_stop_time = countdown_time.get_remaining_time(first_empty_time,"stop")
-
-                        embed = discord.Embed(title="Aucun joueur sur le serveur", description=f"Le Serveur se fermera automatiquement dans ~{remaining_stop_time} minutes")
-                        embed.add_field(name="Pour garder le serveur ouvert", value= "- Se connecter sur le serveur \n - Créer un KeepAlive `/keepalive heure(s) minute(s)`")
-                        embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/stop` ou `/hostsleep`")
-                        await message.edit(embed=embed)
-
-                        if remaining_stop_time == 0 :
-                            await message.edit(content="Compte à rebours terminé. Fermeture du serveur...", embed=None)
-                            await ssh_docker.stop_container_docker()
-
-                            await sqlite.insert_first_down_time()
-                            embed = discord.Embed(title="Le serveur a été fermé pour cause d'inactivité.",description=f"Si aucune activité n'est déclenchée, la machine se mettre automatiquement en veille dans {os.getenv('SLEEP_TIME')} minutes")
-                            embed.add_field(name="Pour garder le serveur allumé",value="lancer le serveur avec la commande `/start`")
-                            embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/hostsleep`")
-
-                            await message.edit(content="",embed=embed)
-
-
-                    else:
-                        if remaining_stop_time < int(os.getenv('STOP_TIME')) * 0.85 :
-                            await sqlite.insert_first_empty_time()
-                            embed = discord.Embed(title="Aucun joueur sur le serveur", description=f"Le Serveur se fermera automatiquement dans {remaining_stop_time} minutes")
-                            embed.add_field(name="Pour garder le serveur ouvert", value= "- Se connecter sur le serveur \n - Créer un KeepAlive `/keepalive`")
-                            embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/stop` ou `/hostsleep`")
-
-                            message = await channel.send(embed=embed)
-                            await sqlite.insert_message_id(message.id)
-                else :
-
-                    first_empty_time = await sqlite.check_first_empty_time()
-                    message_id = await sqlite.get_message_id()
-                    
-                    if first_empty_time != None :
-                        await sqlite.clear_times()
-
-                    if message_id != None:
-                        message = discord.PartialMessage(channel=channel_id, id=message_id)
-                        
-                        embed = discord.Embed(title="Fermeture automatique annulée", description=f"Un joueur est détecté sur le serveur.")
-                        await message.edit(embed=embed)
-
-                        await sqlite.insert_message_id(None)
-        else :
+            first_empty_time = await sqlite.check_first_empty_time()
             first_down_time = await sqlite.check_first_down_time()
-            if first_down_time != None :
-                message_id = await sqlite.get_message_id()
-                message = discord.PartialMessage(channel=channel_id, id=message_id)
-                remaining_sleep_time = countdown_time.get_remaining_time(first_empty_time,"sleep")
-            
-                embed = discord.Embed(title="Le serveur est fermé", description=f"Le Serveur se mettra automatiquement en veille dans ~{remaining_sleep_time} minutes")
-                embed.add_field(name="Pour garder le serveur allumé",value="lancer le serveur avec la commande `/start`")
-                embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/hostsleep`")
+            message_id = await sqlite.get_message_id()
+
+            if first_empty_time != None or first_down_time != None:
+                await sqlite.clear_times()
+                                                
+            if message_id != None:
+                message = discord.PartialMessage(channel=channel, id=message_id)
+                        
+                embed = discord.Embed(title="Le serveur a été mis en veille", description=f"Pour relancer le serveur, lancer la commande `/start` ou `/hostwakeup` (démarrage de la machine uniquement)")
                 await message.edit(embed=embed)
-            
-                if remaining_sleep_time == 0 :
-                    await message.edit(content="Compte à rebours terminé. mise en vaille du serveur...", embed=None)
-                    await ssh_docker.sleep_server()
+                                        
+                await sqlite.clear_message_id()
 
-                    embed = discord.Embed(title="Le serveur a été mis en veille.", description="Pour relancer le serveur, lancer la commande `/start`")
+            return
+        else :
 
-                    await message.edit(content="", embed=embed)
+            keepalive_amount = await sqlite.get_current_keepalive_count()
+            
+            if keepalive_amount > 0 :
+                first_empty_time = await sqlite.check_first_empty_time()
+                first_down_time = await sqlite.check_first_down_time()
+                message_id = await sqlite.get_message_id()
+                            
+                            
+                if first_empty_time != None or first_down_time != None:
+                    await sqlite.clear_times()
+                                    
+                if message_id != None:
+                    message = discord.PartialMessage(channel=channel, id=message_id)
+            
+                    embed = discord.Embed(title="Fermeture automatique annulée", description=f"Un keepalive a été créé pour garder le serveur ouvert.")
+                    await message.edit(embed=embed)
+                            
+                    await sqlite.clear_message_id()
+                            
+                return
+            
+            server_alive = await ssh_docker.health_container_docker()
+    
+            if server_alive == True:
 
-                    await sqlite.insert_message_id(None)
+                gameserver_alive = await gameserver.health_game_server()
+
+                if gameserver_alive == True :
+
+                    players = await gameserver.get_players_from_game_server()
+                    players = players['players']
+                                
+                    playeramount = len(players)
+
+                    if playeramount == 0 :
+                        first_empty_time = await sqlite.check_first_empty_time()
+                        message_id = await sqlite.get_message_id()
+
+                        if first_empty_time != None and message_id != None:
+                            message = discord.PartialMessage(channel=channel, id=message_id)
+                            remaining_stop_time = countdown_time.get_remaining_time(first_empty_time,"stop")
+
+                            embed = discord.Embed(title="Aucun joueur sur le serveur", description=f"Le Serveur se fermera automatiquement dans ~{remaining_stop_time} minutes")
+                            embed.add_field(name="Pour garder le serveur ouvert", value= "- Se connecter sur le serveur \n - Créer un KeepAlive `/addkeepalive heure(s) minute(s)`", inline=False)
+                            embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/stop` ou `/hostsleep`", inline=False)
+                            await message.edit(embed=embed)
+
+                            if remaining_stop_time <= 0 :
+                                await message.edit(content="Compte à rebours terminé. Fermeture du serveur...", embed=None)
+                                await ssh_docker.stop_container_docker()
+
+                                await sqlite.clear_times()
+                                await sqlite.insert_first_down_time()
+                                embed = discord.Embed(title="Le serveur a été fermé pour cause d'inactivité.",description=f"Si aucune activité n'est déclenchée, la machine se mettre automatiquement en veille dans {os.getenv('SLEEP_TIME')} minute(s)")
+                                embed.add_field(name="Pour garder le serveur allumé",value="lancer le serveur avec la commande `/start`", inline=False)
+                                embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/hostsleep`", inline=False)
+
+                                await message.edit(content="",embed=embed)
+
+
+                        else:
+                            if first_empty_time == None :
+                                await sqlite.insert_first_empty_time()
+                                first_empty_time = await sqlite.check_first_empty_time()
+
+                            remaining_stop_time = countdown_time.get_remaining_time(first_empty_time,"stop")
+
+                            if remaining_stop_time < int(os.getenv('STOP_TIME')) * 0.85 :
+                                embed = discord.Embed(title="Aucun joueur sur le serveur", description=f"Le Serveur se fermera automatiquement dans {remaining_stop_time} minutes")
+                                embed.add_field(name="Pour garder le serveur ouvert", value= "- Se connecter sur le serveur \n - Créer un KeepAlive `/addkeepalive`", inline=False)
+                                embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/stop` ou `/hostsleep`", inline=False)
+
+                                message = await channel.send(embed=embed)
+                                await sqlite.insert_message_id(message.id)
+                    else :
+
+                        first_empty_time = await sqlite.check_first_empty_time()
+                        message_id = await sqlite.get_message_id()
+                    
+                        if first_empty_time != None :
+                            await sqlite.clear_times()
+
+                        if message_id != None:
+                            message = discord.PartialMessage(channel=channel, id=message_id)
+                        
+                            embed = discord.Embed(title="Fermeture automatique annulée", description=f"Un joueur est détecté sur le serveur.")
+                            await message.edit(embed=embed)
+
+                            await sqlite.clear_message_id()
+            else :
+                first_empty_time = await sqlite.check_first_empty_time()
+
+                if first_empty_time != None :
+                    await sqlite.clear_first_empty_time()
+
+                first_down_time = await sqlite.check_first_down_time()
+                if first_down_time != None :
+                    message_id = await sqlite.get_message_id()
+                    message = discord.PartialMessage(channel=channel, id=message_id)
+                    remaining_sleep_time = countdown_time.get_remaining_time(first_down_time,"sleep")
+            
+                    embed = discord.Embed(title="Le serveur est fermé", description=f"Le Serveur se mettra automatiquement en veille dans ~{remaining_sleep_time} minute(s)")
+                    embed.add_field(name="Pour garder le serveur allumé",value="lancer le serveur avec la commande `/start` \n - Créer un KeepAlive `/addkeepalive`", inline=False)
+                    embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/hostsleep`", inline=False)
+                    await message.edit(embed=embed)
+            
+                    if remaining_sleep_time <= 0 :
+                        await message.edit(content="Compte à rebours terminé. mise en vaille du serveur...", embed=None)
+                        await ssh_docker.sleep_server()
+
+                        embed = discord.Embed(title="Le serveur a été mis en veille.", description="Pour relancer le serveur, lancer la commande `/start` ou `/hostwakeup` (démarrage de la machine uniquement)")
+
+                        await message.edit(content="", embed=embed)
+
+                        await sqlite.clear_message_id()
             
             
-            else:
-                await sqlite.insert_first_down_time()
-                embed = discord.Embed(title="Le serveur est fermé", description=f"Le Serveur se mettra automatiquement en veille dans ~{remaining_sleep_time} minutes")
-                embed.add_field(name="Pour garder le serveur allumé",value="lancer le serveur avec la commande `/start`")
-                embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/hostsleep`")
+                else:
+                    await sqlite.insert_first_down_time()
+                    embed = discord.Embed(title="Le serveur est fermé", description=f"Le Serveur se mettra automatiquement en veille dans {os.getenv('SLEEP_TIME')} minutes",)
+                    embed.add_field(name="Pour garder le serveur allumé",value="- lancer le serveur avec la commande `/start` \n - Créer un KeepAlive `/addkeepalive`", inline=False)
+                    embed.add_field(name="Sinon, l'éteindre avant la fin du compte à rebours", value="`/hostsleep`", inline=False)
             
-                message = await channel.send(embed=embed)
-                await sqlite.insert_message_id(message.id)
+                    message = await channel.send(embed=embed)
+                    await sqlite.insert_message_id(message.id)
+    except Exception as error:
+        print(f"Error when running loop : {traceback.format_exc()}")
 
 @client.tree.command(name="addkeepalive")
 async def add_keepalive(interaction : discord.Interaction, heures: app_commands.Range[int,0,48], minutes: app_commands.Range[int,0,59]) :
@@ -807,7 +859,7 @@ async def remove_my_keepalives(interaction : discord.Interaction) :
     await msg.add_reaction("✅")
 
 @client.tree.command(name="clearallkeepalives")
-async def remove_my_keepalives(interaction : discord.Interaction) :
+async def remove_all_keepalives(interaction : discord.Interaction) :
     """Supprimer TOUS LES KEEPALIVES (pas seulement les vôtres)"""
     await interaction.response.defer()
 
@@ -816,9 +868,13 @@ async def remove_my_keepalives(interaction : discord.Interaction) :
 
     await sqlite.remove_all_keepalives()
 
-    await msg.edit(content=f"Lles Keepalives ont été supprimés.")
+    await msg.edit(content=f"TOUS les Keepalives ont été supprimés.")
     await msg.clear_reaction("⌛")    
     await msg.add_reaction("✅")
-    
+
+@client.event
+async def on_ready():
+    print("bot started, starting auto-shutdown process")
+    await check_empty_process.start()
 
 client.run(os.getenv('DISCORD_BOT_TOKEN'))

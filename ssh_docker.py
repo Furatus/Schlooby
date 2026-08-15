@@ -7,7 +7,7 @@ import paramiko
 
 async def ssh_client_init():
     ssh_client = SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.WarningPolicy())
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh_client.connect(os.getenv('SERVER_IP'),22,os.getenv('SSH_USERNAME'),os.getenv('SSH_PASSWORD'))
 
     return ssh_client

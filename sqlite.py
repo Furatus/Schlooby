@@ -10,9 +10,7 @@ import time
 async def init_db():
     """Inits the sqlite file, database and tables if not existing"""
 
-    glob.glob(os.getenv('SQLITE_DB_FILE'))
-
-    if len(glob) == 0 :
+    if os.path.exists(os.getenv('SQLITE_DB_FILE')) == False :
         with open(os.getenv('SQLITE_DB_FILE'), 'w') as fp:
             pass
 
@@ -37,16 +35,13 @@ async def check_first_empty_time():
     conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
     c = conn.cursor()
 
-    c.execute(f"SELECT first_empty_time FROM serverstatus WHERE game = {os.getenv('GAME')}")
+    c.execute(f"SELECT first_empty_time FROM serverstatus WHERE game = '{os.getenv('GAME')}'")
     output = c.fetchone()
-
-    print(type(output))
-    print(output)
 
     conn.commit()
     conn.close()
 
-    return output
+    return output[0]
 
 async def insert_first_empty_time():
     conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
@@ -54,7 +49,7 @@ async def insert_first_empty_time():
 
     current_timestamp = calendar.timegm(time.gmtime())
 
-    c.execute(f"UPDATE serverstatus SET first_empty_time = {current_timestamp} WHERE game = {os.getenv('GAME')}")
+    c.execute(f"UPDATE serverstatus SET first_empty_time = {current_timestamp} WHERE game = '{os.getenv('GAME')}'")
 
 
     conn.commit()
@@ -64,16 +59,13 @@ async def check_first_down_time():
     conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
     c = conn.cursor()
 
-    c.execute(f"SELECT first_down_time FROM serverstatus WHERE game = {os.getenv('GAME')}")
+    c.execute(f"SELECT first_down_time FROM serverstatus WHERE game = '{os.getenv('GAME')}'")
     output = c.fetchone()
-
-    print(type(output))
-    print(output)
 
     conn.commit()
     conn.close()
 
-    return output
+    return output[0]
 
 async def insert_first_down_time():
     conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
@@ -81,7 +73,7 @@ async def insert_first_down_time():
 
     current_timestamp = calendar.timegm(time.gmtime())
 
-    c.execute(f"UPDATE serverstatus SET first_down_time = {current_timestamp} WHERE game = {os.getenv('GAME')}")
+    c.execute(f"UPDATE serverstatus SET first_down_time = {current_timestamp} WHERE game = '{os.getenv('GAME')}'")
 
     conn.commit()
     conn.close()
@@ -90,7 +82,7 @@ async def clear_times():
     conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
     c = conn.cursor()
 
-    c.execute(f"UPDATE serverstatus SET first_empty_time = NULL, first_down_time = NULL WHERE game={os.getenv('GAME')}")
+    c.execute(f"UPDATE serverstatus SET first_empty_time = NULL, first_down_time = NULL WHERE game = '{os.getenv('GAME')}'")
 
     conn.commit()
 
@@ -106,12 +98,10 @@ async def get_current_keepalive_count():
     c.execute(f"SELECT COUNT(*) FROM keepalives WHERE starttime <= {current_timestamp} AND endtime >= {current_timestamp}")
     count = c.fetchone()
     
-    print(type(count))
-    
     conn.commit()
     conn.close()
     
-    return count
+    return count[0]
 
 
 async def remove_my_keepalives(userid):
@@ -140,22 +130,38 @@ async def get_message_id():
     conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
     c = conn.cursor()
     
-    c.execute(f"SELECT message_id FROM serverstatus WHERE game = {os.getenv('GAME')}")
+    c.execute(f"SELECT message_id FROM serverstatus WHERE game = '{os.getenv('GAME')}'")
     output = c.fetchone()
     
-    print(type(output))
-    print(output)
     
     conn.commit()
     conn.close()
     
-    return output
+    return output[0]
 
 async def insert_message_id(messageid):
     conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
     c = conn.cursor()
     
-    c.execute(f"UPDATE serverstatus SET message_id = {messageid} WHERE game = {os.getenv('GAME')}")
+    c.execute(f"UPDATE serverstatus SET message_id = {messageid} WHERE game = '{os.getenv('GAME')}'")
     
+    conn.commit()
+    conn.close()
+
+async def clear_message_id():
+    conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
+    c = conn.cursor()
+        
+    c.execute(f"UPDATE serverstatus SET message_id = NULL WHERE game = '{os.getenv('GAME')}'")
+        
+    conn.commit()
+    conn.close()
+
+async def clear_first_empty_time():
+    conn = sqlite.connect(os.getenv('SQLITE_DB_FILE'))
+    c = conn.cursor()
+            
+    c.execute(f"UPDATE serverstatus SET first_empty_time = NULL WHERE game = '{os.getenv('GAME')}'")
+            
     conn.commit()
     conn.close()
